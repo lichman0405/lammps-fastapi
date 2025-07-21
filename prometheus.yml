@@ -15,11 +15,6 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 15s
 
-  - job_name: 'lammps-mcp-worker'
-    static_configs:
-      - targets: ['worker:18000']
-    metrics_path: '/metrics'
-    scrape_interval: 15s
 
   - job_name: 'node-exporter'
     static_configs:

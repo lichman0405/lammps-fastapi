@@ -43,7 +43,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ ./app/
 
-RUN mkdir -p /app/data /app/logs /app/static /app/examples
+RUN mkdir -p /app/data /app/logs /app/static /app/examples /app/lammps/potentials
 COPY examples/ /app/examples/
 RUN chmod -R 755 /app/examples && \
     chmod -R 777 /app/data /app/logs
@@ -61,4 +61,4 @@ EXPOSE 18000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "18000"]
 
 ENV PYTHONPATH=/app
-ENV LAMMPS_POTENTIALS=/usr/local/share/lammps/potentials
+ENV LAMMPS_POTENTIALS=/app/lammps/potentials
