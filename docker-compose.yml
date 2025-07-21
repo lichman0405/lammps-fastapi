@@ -37,10 +37,10 @@ services:
       dockerfile: Dockerfile
     command: celery -A app.celery worker --loglevel=info --concurrency=2 --max-memory-per-child=1000000
     volumes:
-      - ./app:/app:ro
-      - ./data:/app/data:rw
-      - ./logs:/app/logs:rw
-      - ./examples:/app/examples:ro
+      - ./app:/app
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./examples:/app/examples
     environment:
       - REDIS_URL=redis://redis:6379
       - PYTHONPATH=/app
