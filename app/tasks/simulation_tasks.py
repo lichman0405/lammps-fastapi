@@ -6,7 +6,7 @@ import structlog
 from celery import current_task
 from celery.exceptions import Ignore
 
-from app.core.celery_app import celery_app
+from app.celery_app import celery_app
 from app.services.lammps_service import LAMMPSService
 
 
