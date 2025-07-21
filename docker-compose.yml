@@ -6,10 +6,7 @@ services:
     ports:
       - "18000:18000"
     volumes:
-      - ./app:/app
-      - ./data:/app/data
-      - ./logs:/app/logs
-      - ./examples:/app/examples
+      - .:/app 
     working_dir: /app
     command: uvicorn app.main:app --host 0.0.0.0 --port 18000 --workers 4
     env_file:
@@ -34,10 +31,7 @@ services:
       dockerfile: Dockerfile
     command: celery -A app.celery_app worker --loglevel=info --concurrency=2 --max-memory-per-child=1000000
     volumes:
-      - ./app:/app
-      - ./data:/app/data
-      - ./logs:/app/logs
-      - ./examples:/app/examples
+      - .:/app  # ✅ 挂载整个项目根目录
     working_dir: /app
     env_file:
       - .env
