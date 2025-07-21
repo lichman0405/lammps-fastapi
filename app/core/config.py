@@ -1,8 +1,10 @@
 import os
 import secrets
 from typing import List
+from functools import lru_cache
 from pydantic_settings import BaseSettings
 from pydantic import validator
+
 
 class Settings(BaseSettings):
     # 应用配置
@@ -72,5 +74,6 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 
-# 创建全局配置实例
-settings = Settings()
+@lru_cache()
+def get_settings():
+    return Settings()
