@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   api:
     build:
@@ -15,9 +13,9 @@ services:
     working_dir: /app
     command: uvicorn app.main:app --host 0.0.0.0 --port 18000 --workers 4
     env_file:
-      - .env 
+      - .env
     environment:
-      - PYTHONPATH=/app 
+      - PYTHONPATH=/app
     depends_on:
       redis:
         condition: service_healthy
@@ -40,8 +38,9 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./examples:/app/examples
+    working_dir: /app
     env_file:
-      - .env 
+      - .env
     environment:
       - PYTHONPATH=/app
     depends_on:
