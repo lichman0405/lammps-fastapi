@@ -15,9 +15,9 @@ services:
     working_dir: /app
     command: uvicorn app.main:app --host 0.0.0.0 --port 18000 --workers 4
     env_file:
-      - .env  # ✅ 统一加载.env文件
+      - .env 
     environment:
-      - PYTHONPATH=/app  # ✅ 保证正确加载代码模块
+      - PYTHONPATH=/app 
     depends_on:
       redis:
         condition: service_healthy
@@ -41,7 +41,7 @@ services:
       - ./logs:/app/logs
       - ./examples:/app/examples
     env_file:
-      - .env  # ✅ 关键：加载.env文件，注入CELERY配置
+      - .env 
     environment:
       - PYTHONPATH=/app
     depends_on:
