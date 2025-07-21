@@ -1,0 +1,57 @@
+# LJ流体完整示例 - Lennard-Jones流体平衡模拟
+units lj
+atom_style atomic
+
+# 创建模拟盒子
+lattice fcc 0.8442
+region box block 0 10 0 10 0 10
+create_box 1 box
+create_atoms 1 box
+
+# 设置原子质量
+mass 1 1.0
+
+# 设置初始速度 (温度 T* = 1.44)
+velocity all create 1.44 87287 loop geom
+
+# 设置LJ势函数参数
+pair_style lj/cut 2.5
+pair_coeff 1 1 1.0 1.0 2.5
+
+# 邻居列表设置
+neighbor 0.3 bin
+neigh_modify delay 5 every 1
+
+# 能量最小化
+minimize 1.0e-4 1.0e-6 100 1000
+
+# NVT系综平衡 (温度控制)
+fix 1 all nvt temp 1.44 1.44 0.1
+
+# 输出热力学信息
+themo 100
+thermo_style custom step temp epair etotal press vol
+
+# 运行平衡模拟
+run 5000
+
+# 切换到NVE系综进行生产模拟
+unfix 1
+fix 2 all nve
+
+# 设置轨迹输出
+dump 1 all atom 1000 trajectory.lammpstrj
+dump_modify 1 sort id
+
+# 设置额外计算
+compute msd all msd
+compute rdf all rdf 100 1 1
+fix msd all ave/time 10 100 1000 c_msd[4] file msd.txt
+fix rdf all ave/time 100 10 1000 c_rdf[*] file rdf.txt mode vector
+
+# 运行生产模拟
+run 10000
+
+# 最终输出
+write_data final_configuration.data
+write_restart final_restart.restart
