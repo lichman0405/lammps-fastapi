@@ -23,7 +23,6 @@ services:
         condition: service_healthy
     networks:
       - lammps-network
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:18000/health"]
       interval: 30s
@@ -51,7 +50,6 @@ services:
         condition: service_healthy
     networks:
       - lammps-network
-    restart: unless-stopped
     deploy:
       replicas: 2
       resources:
@@ -68,7 +66,6 @@ services:
       - redis_data:/data
     networks:
       - lammps-network
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
