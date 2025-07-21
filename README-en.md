@@ -15,13 +15,14 @@ An advanced web service that provides RESTful API for LAMMPS molecular dynamics 
 - **Multiple Examples**: Ready-to-use LAMMPS simulation examples
 - **Health Checks**: Built-in health monitoring and status reporting
 - **Security**: Non-root container execution and security best practices
+- **Monitoring & Observability**: Integrated Prometheus, Grafana, Loki, and log collection
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- Ports 8000 (API) and 6379 (Redis) available
+- Ports 18000 (API), 16379 (Redis), 18080 (Nginx), 19090 (Prometheus), 13000 (Grafana), 19100 (Node Exporter), 19121 (Redis Exporter), 13100 (Loki) available
 
 ### One-Click Start
 
@@ -31,10 +32,13 @@ git clone <repository-url>
 cd lammps-mcp
 
 # Make the script executable
-chmod +x start.sh
+chmod +x start.sh start-monitoring.sh
 
-# Start the service
+# Start the main service
 ./start.sh
+
+# Start monitoring stack (Prometheus, Grafana, Loki, etc.)
+./start-monitoring.sh
 ```
 
 ### Manual Start
@@ -43,6 +47,9 @@ chmod +x start.sh
 # Build and start services
 docker-compose build
 docker-compose up -d
+
+# Start monitoring stack
+docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 
 # Check service status
 docker-compose ps
@@ -265,3 +272,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **中文文档**: [README.md](README.md)
+
+## 🔍 Monitoring and Observability
+
+- **Prometheus**: http://localhost:19090
+- **Grafana**: http://localhost:13000 (default login: admin/admin123)
+- **Loki**: http://localhost:13100
+- **Node Exporter**: http://localhost:19100
+- **Redis Exporter**: http://localhost:19121
+
+Logs are collected from ./logs and visualized in Grafana via Loki.

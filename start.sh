@@ -65,13 +65,20 @@ fi
 print_success "Docker 和 Docker Compose 已安装"
 
 # 检查端口占用
-check_port 8000 || exit 1
-check_port 6379 || exit 1
+-check_port 8000 || exit 1
+-check_port 6379 || exit 1
++check_port 18000 || exit 1
++check_port 16379 || exit 1
++check_port 18080 || exit 1
 
 # 创建必要的目录
-print_info "📁 创建必要的目录..."
-mkdir -p data/simulations data/uploads data/logs data/backups
-mkdir -p nginx/ssl
+-print_info "📁 创建必要的目录..."
+-mkdir -p data/simulations data/uploads data/logs data/backups
+-mkdir -p nginx/ssl
++print_info "📁 创建必要的目录..."
++mkdir -p data/simulations data/uploads data/logs data/backups
++mkdir -p nginx/ssl
++mkdir -p examples
 
 # 设置权限
 print_info "🔒 设置目录权限..."
@@ -115,25 +122,35 @@ for i in {1..30}; do
 done
 
 # 显示服务状态
-print_info "📊 服务状态:"
-$DOCKER_COMPOSE ps
-
-# 显示资源使用情况
-print_info "💾 资源使用情况:"
-docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
-
-print_success "服务启动完成！"
-echo ""
-echo "🌐 访问地址:"
-echo "   API: http://localhost:8000"
-echo "   文档: http://localhost:8000/docs"
-echo "   健康检查: http://localhost:8000/health"
-echo ""
-echo "📂 数据目录:"
-echo "   模拟数据: ./data/simulations/"
-echo "   上传文件: ./data/uploads/"
-echo "   日志文件: ./data/logs/"
-echo ""
+ print_info "📊 服务状态:"
+ $DOCKER_COMPOSE ps
+ 
+ # 显示资源使用情况
+ print_info "💾 资源使用情况:"
+ docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+ 
+ print_success "服务启动完成！"
+ echo ""
+-echo "🌐 访问地址:"
+-echo "   API: http://localhost:8000"
+-echo "   文档: http://localhost:8000/docs"
+-echo "   健康检查: http://localhost:8000/health"
++echo "🌐 访问地址:"
++echo "   API: http://localhost:18000"
++echo "   文档: http://localhost:18000/docs"
++echo "   健康检查: http://localhost:18000/health"
++echo "   Nginx: http://localhost:18080"
+ echo ""
+-echo "📂 数据目录:"
+-echo "   模拟数据: ./data/simulations/"
+-echo "   上传文件: ./data/uploads/"
+-echo "   日志文件: ./data/logs/"
++echo "📂 数据目录:"
++echo "   模拟数据: ./data/simulations/"
++echo "   上传文件: ./data/uploads/"
++echo "   日志文件: ./data/logs/"
++echo "   示例输入: ./examples/"
+ echo ""
 echo "🔧 常用命令:"
 echo "   查看日志: $DOCKER_COMPOSE logs -f [service]"
 echo "   停止服务: $DOCKER_COMPOSE down"

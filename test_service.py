@@ -10,7 +10,7 @@ import json
 import os
 
 # 配置
-BASE_URL = "http://localhost:8000/api/v1"
+BASE_URL = "http://localhost:18000/api/v1"
 
 
 def test_health_check():

@@ -1,6 +1,5 @@
-# Promtail 配置文件
 server:
-  http_listen_port: 9080
+  http_listen_port: 19080
   grpc_listen_port: 0
 
 positions:

@@ -18,6 +18,7 @@
 - **结构化日志** - 完整的操作和错误日志记录
 - **实时监控** - 任务进度和系统状态监控
 - **文件管理** - 模拟输入输出文件的完整管理
+- **监控与可观测性** - 集成Prometheus、Grafana、Loki，支持日志采集
 
 ## 📋 目录结构
 
@@ -49,6 +50,7 @@ lammps-mcp/
 - Docker 和 Docker Compose
 - 至少 4GB 内存
 - 支持MPI的系统（可选）
+- 端口需求：18000（API）、16379（Redis）、18080（Nginx）、19090（Prometheus）、13000（Grafana）、19100（Node Exporter）、19121（Redis Exporter）、13100（Loki）
 
 ### 一键启动
 
@@ -57,8 +59,14 @@ lammps-mcp/
 git clone <repository-url>
 cd lammps-mcp
 
-# 启动服务
+# 赋予脚本执行权限
+chmod +x start.sh start-monitoring.sh
+
+# 启动主服务
 ./start.sh
+
+# 启动监控服务（Prometheus、Grafana、Loki等）
+./start-monitoring.sh
 ```
 
 ### 手动启动
@@ -72,6 +80,12 @@ docker-compose build
 
 # 启动服务
 docker-compose up -d
+
+# 启动监控服务
+docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+
+# 查看服务状态
+docker-compose ps
 ```
 
 ## 📖 API使用指南
@@ -133,7 +147,15 @@ curl http://localhost:8000/api/v1/simulations/{simulation_id}/results
 - **nginx**: 反向代理和静态文件服务
 - **flower**: Celery监控界面
 
-## 📊 监控和日志
+## 📊 监控与日志
+
+- **Prometheus**: http://localhost:19090
+- **Grafana**: http://localhost:13000 （默认登录：admin/admin123）
+- **Loki**: http://localhost:13100
+- **Node Exporter**: http://localhost:19100
+- **Redis Exporter**: http://localhost:19121
+
+日志采集目录为 ./logs，Grafana 通过 Loki 可视化日志。
 
 ### 服务监控
 
