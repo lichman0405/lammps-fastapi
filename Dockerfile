@@ -41,7 +41,7 @@ RUN git clone https://github.com/lammps/lammps.git /tmp/lammps \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app/ ./app/
+COPY app/ /app/
 
 RUN mkdir -p /app/data /app/logs /app/static /app/examples /app/lammps/potentials
 COPY examples/ /app/examples/

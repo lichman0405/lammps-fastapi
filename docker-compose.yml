@@ -13,9 +13,11 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./examples:/app/examples
+    working_dir: /app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 18000 --workers 4
     environment:
       - REDIS_URL=redis://redis:6379
-      - PYTHONPATH=/app
+      - PYTHONPATH=/
       - ENVIRONMENT=production
       - WORKERS=4
     depends_on:
@@ -34,7 +36,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: celery -A app.celery worker --loglevel=info --concurrency=2 --max-memory-per-child=1000000
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2 --max-memory-per-child=1000000
     volumes:
       - ./app:/app
       - ./data:/app/data
@@ -42,7 +44,7 @@ services:
       - ./examples:/app/examples
     environment:
       - REDIS_URL=redis://redis:6379
-      - PYTHONPATH=/app
+      - PYTHONPATH=/
       - ENVIRONMENT=production
       - CELERY_WORKER_CONCURRENCY=2
     depends_on:
