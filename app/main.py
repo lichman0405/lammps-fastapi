@@ -5,7 +5,9 @@ import structlog
 import redis
 
 from app.api.router import api_router
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 from app.core.logging import setup_logging
 
 # 设置日志

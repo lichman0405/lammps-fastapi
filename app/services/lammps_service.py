@@ -4,6 +4,8 @@ import shutil
 import subprocess
 import tempfile
 import signal
+import psutil
+import re
 import time
 from datetime import datetime
 from contextlib import contextmanager
@@ -12,7 +14,9 @@ from typing import Dict, Any, List, Optional
 
 import structlog
 
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 
 logger = structlog.get_logger()
 
@@ -30,6 +34,7 @@ class LAMMPSService:
     def _validate_simulation_id(self, simulation_id: str) -> bool:
         """验证模拟ID的安全性"""
         # 只允许字母数字和连字符，防止路径遍历
+        import re
         return bool(re.match(r'^[a-zA-Z0-9\-_]+$', simulation_id))
     
     def _sanitize_path(self, path: Path, base_path: Path) -> Path:

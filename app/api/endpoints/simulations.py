@@ -14,7 +14,9 @@ from app.services.lammps_service import LAMMPSService
 from app.tasks.simulation_tasks import (
     run_lammps_simulation, cleanup_simulation_task, get_simulation_status_task
 )
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 import structlog
 
 logger = structlog.get_logger(__name__)

@@ -3,7 +3,9 @@ import logging
 import sys
 from pathlib import Path
 
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 
 def setup_logging():
     """配置结构化日志系统"""

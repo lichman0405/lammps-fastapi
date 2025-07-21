@@ -3,7 +3,9 @@ import structlog
 
 from app.models.simulation import ScriptValidationRequest, ScriptValidationResponse
 from app.tasks.simulation_tasks import validate_lammps_script
-from app.core.config import settings
+from app.core.config import get_settings
+
+settings = get_settings()
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
