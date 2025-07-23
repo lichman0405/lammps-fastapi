@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Depends
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime
 import uuid
 import re
+import json
+import redis
 from pathlib import Path
+
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query, Path as FastAPIPath
 
 from app.models.simulation import (
     SimulationCreate, SimulationUpdate, SimulationResponse, 
@@ -18,9 +21,67 @@ from app.core.config import get_settings
 
 settings = get_settings()
 import structlog
+import pickle
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
+
+# 初始化服务
+lammps_service = LAMMPSService()
+
+# Redis客户端用于持久化存储
+redis_client = redis.from_url(settings.REDIS_URL, decode_responses=False)
+
+# Redis键前缀
+SIMULATIONS_KEY_PREFIX = "simulations:"
+
+# 内存缓存（可选，用于性能优化）
+_simulations_cache: Dict[str, SimulationResponse] = {}
+
+# 辅助函数：保存模拟到Redis
+def _save_simulation_to_redis(simulation: SimulationResponse) -> None:
+    """将模拟数据保存到Redis"""
+    key = f"{SIMULATIONS_KEY_PREFIX}{simulation.id}"
+    try:
+        serialized = pickle.dumps(simulation)
+        redis_client.set(key, serialized)
+    except Exception as e:
+        logger.error("Failed to save simulation to Redis", simulation_id=simulation.id, error=str(e))
+        raise
+
+# 辅助函数：从Redis获取模拟
+def _get_simulation_from_redis(simulation_id: str) -> Optional[SimulationResponse]:
+    """从Redis获取模拟数据"""
+    key = f"{SIMULATIONS_KEY_PREFIX}{simulation_id}"
+    try:
+        data = redis_client.get(key)
+        if data:
+            return pickle.loads(data)
+        return None
+    except Exception as e:
+        logger.error("Failed to get simulation from Redis", simulation_id=simulation_id, error=str(e))
+        return None
+
+# 辅助函数：从Redis删除模拟
+def _delete_simulation_from_redis(simulation_id: str) -> None:
+    """从Redis删除模拟数据"""
+    key = f"{SIMULATIONS_KEY_PREFIX}{simulation_id}"
+    try:
+        redis_client.delete(key)
+        logger.info("Deleted simulation from Redis", simulation_id=simulation_id)
+    except Exception as e:
+        logger.error("Failed to delete simulation from Redis", simulation_id=simulation_id, error=str(e))
+        raise
+
+# 辅助函数：获取所有模拟ID
+def _get_all_simulation_ids() -> List[str]:
+    """获取所有模拟ID"""
+    try:
+        keys = redis_client.keys(f"{SIMULATIONS_KEY_PREFIX}*")
+        return [key.decode().replace(SIMULATIONS_KEY_PREFIX, "") for key in keys]
+    except Exception as e:
+        logger.error("Failed to get simulation IDs from Redis", error=str(e))
+        return []
 
 # 简单的内存存储，生产环境应使用数据库
 simulations_db = {}
@@ -105,7 +166,11 @@ async def create_simulation(simulation: SimulationCreate):
             workspace_path=str(Path(settings.DATA_DIR) / simulation_id)
         )
         
-        # 保存到"数据库"
+        # 保存到Redis和内存缓存
+        _save_simulation_to_redis(simulation_record)
+        _simulations_cache[simulation_id] = simulation_record
+        
+        # 保存到内存数据库（兼容旧代码）
         simulations_db[simulation_id] = simulation_record.dict()
         
         logger.info("Created new simulation", simulation_id=simulation_id)
@@ -127,6 +192,14 @@ async def list_simulations(
     """获取模拟列表"""
     
     try:
+        # 从Redis加载所有模拟并更新内存缓存
+        simulation_ids = _get_all_simulation_ids()
+        for sim_id in simulation_ids:
+            sim_data = _get_simulation_from_redis(sim_id)
+            if sim_data:
+                _simulations_cache[sim_id] = sim_data
+                simulations_db[sim_id] = sim_data.dict()
+        
         # 筛选模拟
         filtered_simulations = list(simulations_db.values())
         if status:
@@ -166,6 +239,12 @@ async def get_simulation(simulation_id: str = Depends(validate_simulation_id)):
     """获取单个模拟详情"""
     
     try:
+        # 从Redis加载并更新内存缓存
+        sim_data = _get_simulation_from_redis(simulation_id)
+        if sim_data:
+            _simulations_cache[simulation_id] = sim_data
+            simulations_db[simulation_id] = sim_data.dict()
+        
         if simulation_id not in simulations_db:
             raise HTTPException(status_code=404, detail="Simulation not found")
         
@@ -255,6 +334,13 @@ async def delete_simulation(
         cleanup_task = cleanup_simulation_task.delay(simulation_id)
         logger.info("Started cleanup task", simulation_id=simulation_id, cleanup_task_id=cleanup_task.id)
         
+        # 从Redis删除
+        _delete_simulation_from_redis(simulation_id)
+        
+        # 从内存缓存删除
+        if simulation_id in _simulations_cache:
+            del _simulations_cache[simulation_id]
+        
         # 从数据库中移除
         del simulations_db[simulation_id]
         
@@ -301,6 +387,11 @@ async def start_simulation(simulation_id: str = Depends(validate_simulation_id))
         
         simulations_db[simulation_id] = sim_data
         
+        # 同步到Redis
+        simulation_record = SimulationResponse(**sim_data)
+        _save_simulation_to_redis(simulation_record)
+        _simulations_cache[simulation_id] = simulation_record
+        
         logger.info("Started simulation", simulation_id=simulation_id, task_id=task.id)
         
         return {"message": "Simulation started", "task_id": task.id}
@@ -340,6 +431,11 @@ async def cancel_simulation(simulation_id: str = Depends(validate_simulation_id)
         sim_data['completed_at'] = datetime.utcnow()
         
         simulations_db[simulation_id] = sim_data
+        
+        # 同步到Redis
+        simulation_record = SimulationResponse(**sim_data)
+        _save_simulation_to_redis(simulation_record)
+        _simulations_cache[simulation_id] = simulation_record
         
         logger.info("Cancelled simulation", simulation_id=simulation_id)
         
