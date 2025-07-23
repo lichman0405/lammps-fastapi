@@ -1,284 +1,300 @@
+
 # LAMMPS MCP - Molecular Dynamics Simulation Service
 
 [![Docker](https://img.shields.io/badge/Docker-Supported-blue.svg)](https://www.docker.com/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Powered-green.svg)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Driven-green.svg)](https://fastapi.tiangolo.com/)
 [![LAMMPS](https://img.shields.io/badge/LAMMPS-Integrated-orange.svg)](https://www.lammps.org/)
 
-An advanced web service that provides RESTful API for LAMMPS molecular dynamics simulations, supporting distributed computing and real-time monitoring.
+A modern LAMMPS molecular dynamics simulation service providing RESTful API interface, Docker container deployment, complete logging, and MPI parallel computing support.
 
-## 🌟 Features
+**[English Version](README-en.md)** | **中文版**
 
-- **RESTful API**: Clean and intuitive REST API for LAMMPS simulations
-- **Distributed Computing**: Celery-based task queue for scalable simulation processing
-- **Real-time Monitoring**: Flower integration for task monitoring and management
-- **Docker Support**: Complete containerization with Docker Compose
-- **Multiple Examples**: Ready-to-use LAMMPS simulation examples
-- **Health Checks**: Built-in health monitoring and status reporting
-- **Security**: Non-root container execution and security best practices
-- **Monitoring & Observability**: Integrated Prometheus, Grafana, Loki, and log collection
+## 🚀 Features
 
-## 🚀 Quick Start
+- **Full LAMMPS Functionality Support** - Access all LAMMPS features via the Python API
+- **RESTful API** - Standardized HTTP interface for easy integration
+- **Asynchronous Task Processing** - Distributed task queue powered by Celery
+- **Docker Containerization** - One-click deployment without complex configuration
+- **MPI Parallel Support** - Supports multi-process parallel computing
+- **Structured Logging** - Complete operational and error logging
+- **Real-time Monitoring** - Task progress and system status monitoring
+- **File Management** - Full management of simulation input and output files
+
+## 📋 Directory Structure
+
+```
+lammps-mcp/
+├── app/                    # Application code
+│   ├── api/               # API routes
+│   │   ├── endpoints/     # Endpoint definitions
+│   │   └── router.py      # Route configuration
+│   ├── core/              # Core configuration
+│   ├── models/            # Data models
+│   ├── services/          # Business logic
+│   ├── tasks/             # Asynchronous tasks
+│   ├── main.py            # FastAPI entrypoint
+│   └── celery.py          # Celery configuration
+├── data/                  # Data directory
+├── nginx/                 # Nginx configuration
+├── docker-compose.yml     # Docker Compose config
+├── Dockerfile            # Docker image build file
+├── requirements.txt      # Python dependencies
+└── README.md            # Project documentation
+```
+
+## 🛠️ Quick Start
 
 ### Prerequisites
 
-- Docker and Docker Compose installed
-- Ports 18000 (API), 16379 (Redis), 18080 (Nginx), 19090 (Prometheus), 13000 (Grafana), 19100 (Node Exporter), 19121 (Redis Exporter), 13100 (Loki) available
+- Docker and Docker Compose
+- At least 4GB of RAM
+- MPI-supported system (optional)
+- Required ports: 18000 (API), 16379 (Redis), 18080 (Nginx)
 
-### One-Click Start
+### One-Click Launch
 
 ```bash
-# Clone the repository
+# Clone the project
 git clone <repository-url>
 cd lammps-mcp
-
-# Make the script executable
-chmod +x start.sh start-monitoring.sh
-
-# Start the main service
-./start.sh
-
-# Start monitoring stack (Prometheus, Grafana, Loki, etc.)
-./start-monitoring.sh
 ```
 
-### Manual Start
+### Manual Launch
 
 ```bash
-# Build and start services
+# Create necessary directories
+mkdir -p data/simulations data/uploads data/logs
+
+# Build the image
 docker-compose build
+
+# Start the service
 docker-compose up -d
 
-# Start monitoring stack
+# Start monitoring services
 docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 
 # Check service status
 docker-compose ps
 ```
 
-## 📋 API Documentation
+## 📖 API Usage Guide
 
-Once the service is running, you can access:
+### Create Simulation
 
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-- **Flower Monitoring**: http://localhost:5555
-
-## 📁 Project Structure
-
+```bash
+curl -X POST http://localhost:18000/api/v1/simulations   -H "Content-Type: application/json"   -d '{
+    "name": "Lennard-Jones Simulation",
+    "description": "Simple LJ fluid simulation",
+    "input_script": "units lj\natom_style atomic\nlattice fcc 0.8442\nregion box block 0 10 0 10 0 10\ncreate_box 1 box\ncreate_atoms 1 box\nmass 1 1.0\nvelocity all create 1.44 87287 loop geom\npair_style lj/cut 2.5\npair_coeff 1 1 1.0 1.0 2.5\nneighbor 0.3 bin\nneigh_modify delay 5 every 1\nfix 1 all nve\nrun 1000",
+    "mpi_processes": 2
+  }'
 ```
-lammps-mcp/
-├── app/                    # Main application code
-│   ├── api/               # API endpoints and routing
-│   ├── core/              # Core configurations
-│   ├── models/            # Data models
-│   ├── services/          # Business logic
-│   └── tasks/             # Celery tasks
-├── examples/              # LAMMPS simulation examples
-├── data/                  # Data directories (created automatically)
-├── nginx/                 # Nginx configuration
-├── docker-compose.yml     # Docker Compose configuration
-├── Dockerfile            # Docker configuration
-└── start.sh              # Startup script
+
+### Start Simulation
+
+```bash
+curl -X POST http://localhost:18000/api/v1/simulations/{simulation_id}/start
+```
+
+### Get Simulation Status
+
+```bash
+curl http://localhost:18000/api/v1/simulations/{simulation_id}
+```
+
+### Get Simulation Logs
+
+```bash
+curl http://localhost:18000/api/v1/simulations/{simulation_id}/logs
+```
+
+### Get Simulation Results
+
+```bash
+curl http://localhost:18000/api/v1/simulations/{simulation_id}/results
 ```
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-Create a `.env` file in the project root:
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LAMMPS_POTENTIALS` | `/app/lammps/potentials` | Potential file directory |
+| `DATA_DIR` | `/app/data` | Data storage directory |
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `REDIS_URL` | `redis://redis:6379/0` | Redis connection URL |
+| `MPI_PROCESSES` | `1` | Default MPI process count |
+
+### Docker Compose Services
+
+- **api**: FastAPI application service
+- **worker**: Celery worker process
+- **redis**: Message queue and cache
+- **nginx**: Reverse proxy and static file service
+- **flower**: Celery monitoring UI
+
+### Monitoring Services
+
+- **API Docs**: http://localhost:18000/docs - Swagger documentation
+- **Health Check**: http://localhost:18000/health
+
+### Log Viewing
 
 ```bash
-# Application Configuration
-ENVIRONMENT=development
-REDIS_URL=redis://redis:6379
-WORKERS=2
-LOG_LEVEL=INFO
-SECRET_KEY=your-secret-key-change-this
-```
+# View logs for all services
+docker-compose logs -f
 
-### Docker Configuration
-
-The service uses multi-stage Docker builds for optimal performance:
-
-- **Base Image**: python:3.11-slim
-- **LAMMPS**: Compiled from source with Python support
-- **Security**: Runs as non-root user
-- **Health Checks**: Built-in health monitoring
-
-## 📊 Usage Examples
-
-### Submit a Simulation
-
-```bash
-# Submit LJ fluid simulation
-curl -X POST "http://localhost:8000/api/v1/simulations" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "LJ Fluid Simulation",
-    "input_file": "examples/lj_fluid_complete.in",
-    "parameters": {
-      "temperature": 1.0,
-      "density": 0.8
-    }
-  }'
-```
-
-### Check Simulation Status
-
-```bash
-# Get simulation status
-curl "http://localhost:8000/api/v1/simulations/{simulation_id}/status"
-```
-
-### Download Results
-
-```bash
-# Download simulation results
-curl "http://localhost:8000/api/v1/simulations/{simulation_id}/download" \
-  -o results.zip
-```
-
-## 🧪 Examples
-
-The project includes several LAMMPS simulation examples:
-
-### 1. Lennard-Jones Fluid (`examples/lj_fluid_complete.in`)
-- **Description**: Basic LJ fluid simulation with NVT and NVE ensembles
-- **Features**: Equilibration, production run, MSD calculation, RDF analysis
-- **Usage**: Ready to run without additional files
-
-### 2. Graphene Tensile Test (`examples/graphene.in`)
-- **Description**: Graphene sheet under tensile loading
-- **Features**: AIREBO potential, stress-strain analysis, deformation tracking
-- **Requirements**: Requires `CH.airebo` potential file
-
-### 3. Basic LJ Fluid (`examples/lj_fluid.in`)
-- **Description**: Simple LJ fluid setup
-- **Features**: Basic initialization and NVE dynamics
-- **Usage**: Minimal configuration example
-
-## 🔍 Monitoring and Debugging
-
-### Service Health
-
-```bash
-# Check service health
-curl http://localhost:8000/health
-
-# View service logs
+# View specific service logs
 docker-compose logs -f api
 docker-compose logs -f worker
 ```
 
-### Resource Monitoring
+## 🧪 Example Use Cases
 
-```bash
-# View container statistics
-docker stats
+### 1. Create and Run an LJ Fluid Simulation
 
-# Check Redis status
-docker-compose exec redis redis-cli ping
+```python
+import requests
+
+# Create a simulation
+response = requests.post('http://localhost:18000/api/v1/simulations', json={
+    'name': 'LJ Fluid Test',
+    'input_script': '''
+        units lj
+        atom_style atomic
+        lattice fcc 0.8442
+        region box block 0 10 0 10 0 10
+        create_box 1 box
+        create_atoms 1 box
+        mass 1 1.0
+        velocity all create 1.44 87287 loop geom
+        pair_style lj/cut 2.5
+        pair_coeff 1 1 1.0 1.0 2.5
+        neighbor 0.3 bin
+        neigh_modify delay 5 every 1
+        fix 1 all nve
+        thermo 100
+        run 1000
+    ''',
+    'mpi_processes': 2
+})
+
+simulation_id = response.json()['id']
+
+# Start the simulation
+requests.post(f'http://localhost:18000/api/v1/simulations/{simulation_id}/start')
 ```
 
-### Troubleshooting
+### 2. Batch Simulations
 
-Common issues and solutions:
+```python
+import asyncio
+import aiohttp
 
-1. **Port Conflicts**: Ensure ports 8000 and 6379 are available
-2. **Permission Issues**: Check directory permissions in `./data/`
-3. **LAMMPS Errors**: Verify input files in `./examples/`
-4. **Memory Issues**: Monitor resource usage with `docker stats`
+async def run_simulations():
+    async with aiohttp.ClientSession() as session:
+        # Create multiple simulations
+        tasks = []
+        for temp in [1.0, 1.5, 2.0]:
+            task = session.post('http://localhost:18000/api/v1/simulations', json={
+                'name': f'T={temp} LJ Simulation',
+                'input_script': f'''
+                    units lj
+                    atom_style atomic
+                    lattice fcc 0.8442
+                    region box block 0 10 0 10 0 10
+                    create_box 1 box
+                    create_atoms 1 box
+                    mass 1 1.0
+                    velocity all create {temp} 87287 loop geom
+                    pair_style lj/cut 2.5
+                    pair_coeff 1 1 1.0 1.0 2.5
+                    fix 1 all nve
+                    thermo 100
+                    run 1000
+                ''',
+                'mpi_processes': 1
+            })
+            tasks.append(task)
 
-## 🐛 Development
+        # Parallel creation
+        responses = await asyncio.gather(*tasks)
 
-### Local Development
+        # Start all simulations
+        start_tasks = []
+        for response in responses:
+            sim_id = (await response.json())['id']
+            start_tasks.append(
+                session.post(f'http://localhost:18000/api/v1/simulations/{sim_id}/start')
+            )
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+        await asyncio.gather(*start_tasks)
 
-# Start Redis (if running locally)
-redis-server
-
-# Start Celery worker
-celery -A app.celery worker --loglevel=info
-
-# Start API server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Run batch simulations
+asyncio.run(run_simulations())
 ```
 
-### Testing
+## 🐛 Troubleshooting
 
-```bash
-# Run tests
-python test_service.py
+### Common Issues
 
-# Test with curl
-curl http://localhost:8000/health
-```
+1. **Container Failed to Start**
+   ```bash
+   # Check logs
+   docker-compose logs
 
-## 🛡️ Security
+   # Rebuild
+   docker-compose build --no-cache
+   ```
 
-- **Non-root containers**: All services run as non-root users
-- **Volume permissions**: Proper file ownership and permissions
-- **Environment variables**: Sensitive data managed via .env files
-- **Network isolation**: Services communicate through dedicated networks
+2. **LAMMPS Cannot Find Potential Files**
+   ```bash
+   # Check potential directory
+   docker-compose exec api ls -la /app/lammps/potentials/
+   ```
 
-## 📈 Scaling
+3. **MPI Processes Fail to Start**
+   ```bash
+   # Check MPI installation
+   docker-compose exec api mpirun --version
+   ```
 
-### Horizontal Scaling
+4. **Insufficient Memory**
+   ```bash
+   # Increase Docker memory limit
+   # Edit mem_limit in docker-compose.yml
+   ```
 
-```bash
-# Scale worker processes
-docker-compose up -d --scale worker=4
+### Debugging Tips
 
-# Monitor with Flower
-open http://localhost:5555
-```
+- Use `docker-compose exec api bash` to enter the container
+- View detailed logs: `docker-compose logs -f --tail=100 api`
+- Check task status: visit http://localhost:5555
 
-### Vertical Scaling
+## 🤝 Contribution Guide
 
-Adjust resource limits in `docker-compose.yml`:
-
-```yaml
-services:
-  worker:
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-          cpus: '2.0'
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Create a Pull Request
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔗 Links
+## 🙋‍♂️ Support
 
-- [LAMMPS Official Documentation](https://docs.lammps.org/)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Celery Documentation](https://docs.celeryproject.org/)
-- [Docker Documentation](https://docs.docker.com/)
+For questions or suggestions, contact us via:
 
----
+- Create a GitHub Issue
+- Send an email to the project maintainer
 
-**中文文档**: [README.md](README.md)
+## 🔗 Related Resources
 
-## 🔍 Monitoring and Observability
-
-- **Prometheus**: http://localhost:19090
-- **Grafana**: http://localhost:13000 (default login: admin/admin123)
-- **Loki**: http://localhost:13100
-- **Node Exporter**: http://localhost:19100
-- **Redis Exporter**: http://localhost:19121
-
-Logs are collected from ./logs and visualized in Grafana via Loki.
+- [LAMMPS Official Docs](https://docs.lammps.org/)
+- [LAMMPS Python Interface](https://docs.lammps.org/Python_head.html)
+- [FastAPI Docs](https://fastapi.tiangolo.com/)
+- [Celery Docs](https://docs.celeryproject.org/)

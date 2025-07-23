@@ -18,7 +18,6 @@
 - **结构化日志** - 完整的操作和错误日志记录
 - **实时监控** - 任务进度和系统状态监控
 - **文件管理** - 模拟输入输出文件的完整管理
-- **监控与可观测性** - 集成Prometheus、Grafana、Loki，支持日志采集
 
 ## 📋 目录结构
 
@@ -39,7 +38,6 @@ lammps-mcp/
 ├── docker-compose.yml     # Docker Compose配置
 ├── Dockerfile            # Docker镜像构建
 ├── requirements.txt      # Python依赖
-├── start.sh             # 启动脚本
 └── README.md            # 项目文档
 ```
 
@@ -50,7 +48,8 @@ lammps-mcp/
 - Docker 和 Docker Compose
 - 至少 4GB 内存
 - 支持MPI的系统（可选）
-- 端口需求：18000（API）、16379（Redis）、18080（Nginx）、19090（Prometheus）、13000（Grafana）、19100（Node Exporter）、19121（Redis Exporter）、13100（Loki）
+- 端口需求：18000（API）、16379（Redis）、18080（Nginx）
+
 
 ### 一键启动
 
@@ -58,15 +57,6 @@ lammps-mcp/
 # 克隆项目
 git clone <repository-url>
 cd lammps-mcp
-
-# 赋予脚本执行权限
-chmod +x start.sh start-monitoring.sh
-
-# 启动主服务
-./start.sh
-
-# 启动监控服务（Prometheus、Grafana、Loki等）
-./start-monitoring.sh
 ```
 
 ### 手动启动
@@ -93,7 +83,7 @@ docker-compose ps
 ### 创建模拟
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/simulations \
+curl -X POST http://localhost:18000/api/v1/simulations \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Lennard-Jones模拟",
@@ -106,25 +96,25 @@ curl -X POST http://localhost:8000/api/v1/simulations \
 ### 启动模拟
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/simulations/{simulation_id}/start
+curl -X POST http://localhost:18000/api/v1/simulations/{simulation_id}/start
 ```
 
 ### 获取模拟状态
 
 ```bash
-curl http://localhost:8000/api/v1/simulations/{simulation_id}
+curl http://localhost:18000/api/v1/simulations/{simulation_id}
 ```
 
 ### 获取模拟日志
 
 ```bash
-curl http://localhost:8000/api/v1/simulations/{simulation_id}/logs
+curl http://localhost:18000/api/v1/simulations/{simulation_id}/logs
 ```
 
 ### 获取模拟结果
 
 ```bash
-curl http://localhost:8000/api/v1/simulations/{simulation_id}/results
+curl http://localhost:18000/api/v1/simulations/{simulation_id}/results
 ```
 
 ## 🔧 配置说明
@@ -147,21 +137,10 @@ curl http://localhost:8000/api/v1/simulations/{simulation_id}/results
 - **nginx**: 反向代理和静态文件服务
 - **flower**: Celery监控界面
 
-## 📊 监控与日志
-
-- **Prometheus**: http://localhost:19090
-- **Grafana**: http://localhost:13000 （默认登录：admin/admin123）
-- **Loki**: http://localhost:13100
-- **Node Exporter**: http://localhost:19100
-- **Redis Exporter**: http://localhost:19121
-
-日志采集目录为 ./logs，Grafana 通过 Loki 可视化日志。
-
 ### 服务监控
 
-- **Flower**: http://localhost:5555 - Celery任务监控
-- **API文档**: http://localhost:8000/docs - Swagger文档
-- **健康检查**: http://localhost:8000/health
+- **API文档**: http://localhost:18000/docs - Swagger文档
+- **健康检查**: http://localhost:18000/health
 
 ### 日志查看
 
@@ -182,7 +161,7 @@ docker-compose logs -f worker
 import requests
 
 # 创建模拟
-response = requests.post('http://localhost:8000/api/v1/simulations', json={
+response = requests.post('http://localhost:18000/api/v1/simulations', json={
     'name': 'LJ流体测试',
     'input_script': '''
         units lj
@@ -207,7 +186,7 @@ response = requests.post('http://localhost:8000/api/v1/simulations', json={
 simulation_id = response.json()['id']
 
 # 启动模拟
-requests.post(f'http://localhost:8000/api/v1/simulations/{simulation_id}/start')
+requests.post(f'http://localhost:18000/api/v1/simulations/{simulation_id}/start')
 ```
 
 ### 2. 批量模拟
@@ -221,7 +200,7 @@ async def run_simulations():
         # 创建多个模拟任务
         tasks = []
         for temp in [1.0, 1.5, 2.0]:
-            task = session.post('http://localhost:8000/api/v1/simulations', json={
+            task = session.post('http://localhost:18000/api/v1/simulations', json={
                 'name': f'T={temp} LJ模拟',
                 'input_script': f'''
                     units lj
@@ -250,7 +229,7 @@ async def run_simulations():
         for response in responses:
             sim_id = (await response.json())['id']
             start_tasks.append(
-                session.post(f'http://localhost:8000/api/v1/simulations/{sim_id}/start')
+                session.post(f'http://localhost:18000/api/v1/simulations/{sim_id}/start')
             )
         
         await asyncio.gather(*start_tasks)
