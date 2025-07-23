@@ -11,7 +11,7 @@ def setup_logging():
     """配置结构化日志系统"""
     
     # 确保日志目录存在
-    log_dir = Path(settings.LOGS_DIR)
+    log_dir = Path(settings.LOG_DIR)
     log_dir.mkdir(parents=True, exist_ok=True)
     
     # 配置标准日志

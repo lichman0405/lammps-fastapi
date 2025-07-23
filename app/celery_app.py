@@ -1,11 +1,12 @@
 from celery import Celery
 import structlog
+
 from app.core.config import get_settings
 
-# 惰性加载配置
 settings = get_settings()
 
-# 创建 Celery 实例
+
+# 创建Celery实例
 celery_app = Celery(
     "lammps_mcp",
     broker=settings.CELERY_BROKER_URL,
@@ -13,7 +14,7 @@ celery_app = Celery(
     include=["app.tasks.simulation_tasks"]
 )
 
-# 配置 Celery
+# 配置Celery
 celery_app.conf.update(
     task_serializer="json",
     accept_content=["json"],
@@ -21,8 +22,8 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
     task_track_started=True,
-    task_time_limit=3600,
-    task_soft_time_limit=3300,
+    task_time_limit=3600,  # 任务最大执行时间1小时
+    task_soft_time_limit=3300,  # 软限制55分钟
     worker_prefetch_multiplier=1,
     worker_max_tasks_per_child=1000,
 )
@@ -35,7 +36,6 @@ def debug_task(self):
     """调试任务"""
     logger.info("Debug task executed", task_id=self.request.id)
     return {"task_id": self.request.id}
-
 
 # 任务状态常量
 class TaskStatus:

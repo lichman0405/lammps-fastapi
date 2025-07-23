@@ -43,10 +43,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ /app/
 
-RUN mkdir -p /app/data /app/logs /app/static /app/examples /app/lammps/potentials
+RUN mkdir -p /app/data /app/logs /app/static /app/examples /app/lammps/potentials /app/uploads /app/simulations
 COPY examples/ /app/examples/
 RUN chmod -R 755 /app/examples && \
-    chmod -R 777 /app/data /app/logs
+    chmod -R 777 /app/data /app/logs /app/uploads /app/simulations
 
 RUN groupadd -r lammps && useradd -r -g lammps lammps && \
     chown -R lammps:lammps /app
