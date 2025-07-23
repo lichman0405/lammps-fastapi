@@ -83,7 +83,7 @@ docker-compose ps
 ### Create Simulation
 
 ```bash
-curl -X POST http://localhost:18000/api/v1/simulations   -H "Content-Type: application/json"   -d '{
+curl -X POST http://localhost:18000/api/v1/simulations/   -H "Content-Type: application/json"   -d '{
     "name": "Lennard-Jones Simulation",
     "description": "Simple LJ fluid simulation",
     "input_script": "units lj\natom_style atomic\nlattice fcc 0.8442\nregion box block 0 10 0 10 0 10\ncreate_box 1 box\ncreate_atoms 1 box\nmass 1 1.0\nvelocity all create 1.44 87287 loop geom\npair_style lj/cut 2.5\npair_coeff 1 1 1.0 1.0 2.5\nneighbor 0.3 bin\nneigh_modify delay 5 every 1\nfix 1 all nve\nrun 1000",
@@ -159,7 +159,7 @@ docker-compose logs -f worker
 import requests
 
 # Create a simulation
-response = requests.post('http://localhost:18000/api/v1/simulations', json={
+response = requests.post('http://localhost:18000/api/v1/simulations/', json={
     'name': 'LJ Fluid Test',
     'input_script': '''
         units lj
@@ -198,7 +198,7 @@ async def run_simulations():
         # Create multiple simulations
         tasks = []
         for temp in [1.0, 1.5, 2.0]:
-            task = session.post('http://localhost:18000/api/v1/simulations', json={
+            task = session.post('http://localhost:18000/api/v1/simulations/', json={
                 'name': f'T={temp} LJ Simulation',
                 'input_script': f'''
                     units lj

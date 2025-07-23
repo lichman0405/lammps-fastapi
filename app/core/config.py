@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     # 资源限制
     MAX_UPLOAD_SIZE: int = 100 * 1024 * 1024  # 100MB
     MAX_SIMULATION_TIME: int = 3600  # 1小时
+    MAX_SCRIPT_SIZE: int = 1024 * 1024  # 1MB
 
     # Celery配置
     CELERY_BROKER_URL: str

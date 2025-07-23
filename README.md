@@ -83,7 +83,7 @@ docker-compose ps
 ### 创建模拟
 
 ```bash
-curl -X POST http://localhost:18000/api/v1/simulations \
+curl -X POST http://localhost:18000/api/v1/simulations/ \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Lennard-Jones模拟",
@@ -161,7 +161,7 @@ docker-compose logs -f worker
 import requests
 
 # 创建模拟
-response = requests.post('http://localhost:18000/api/v1/simulations', json={
+response = requests.post('http://localhost:18000/api/v1/simulations/', json={
     'name': 'LJ流体测试',
     'input_script': '''
         units lj
@@ -200,7 +200,7 @@ async def run_simulations():
         # 创建多个模拟任务
         tasks = []
         for temp in [1.0, 1.5, 2.0]:
-            task = session.post('http://localhost:18000/api/v1/simulations', json={
+            task = session.post('http://localhost:18000/api/v1/simulations/', json={
                 'name': f'T={temp} LJ模拟',
                 'input_script': f'''
                     units lj
